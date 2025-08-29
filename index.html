@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -62,10 +62,11 @@
         import QrScanner from 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner.min.js';
         
         // Pega aquí la URL que obtuviste al desplegar el script de Google Apps Script.
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwlQ6E5ChKU9PdlcmGCO67uhXFIr7iGSAMV7X0HbfT2KOUIjRl-YHLu9LN7T-iZiTmG/exec';
+        const WEB_APP_URL = 'pega_aqui_tu_url_de_google_apps_script';
 
         let qrScanner = null;
         let isCameraActive = false;
+        let isProcessingScan = false;
 
         const videoElement = document.getElementById('qr-video');
         const toggleCameraBtn = document.getElementById('toggle-camera-btn');
@@ -90,9 +91,13 @@
 
         // Function to handle a QR scan and send data to Apps Script
         async function handleScan(id) {
+            if (isProcessingScan) return;
+            isProcessingScan = true;
+
             const eventName = eventInput.value.trim();
             if (!eventName) {
                 showStatusMessage('Por favor, selecciona un evento.', 'error');
+                isProcessingScan = false;
                 return;
             }
 
@@ -108,19 +113,13 @@
                 });
                 
                 showStatusMessage(`Asistencia registrada con éxito para el ID: ${id} en el evento '${eventName}'`, 'success');
-                // Detiene el escáner automáticamente después del registro
-                isCameraActive = false;
-                toggleCameraBtn.textContent = 'Iniciar escáner';
-                noCameraMessage.classList.remove('hidden');
-                if (qrScanner) {
-                    qrScanner.stop();
-                }
-                
                 console.log('Datos enviados correctamente.');
 
             } catch (e) {
                 console.error('Error al registrar la asistencia:', e);
-                showStatusMessage('Error al registrar la asistencia. Inténtalo de nuevo.', 'error');
+                showStatusMessage('Error al registrar la asistencia. Revisa el nombre de la hoja en tu Google Sheet (debe ser "Asistencia") y la URL del script.', 'error');
+            } finally {
+                isProcessingScan = false;
             }
         }
 
@@ -135,6 +134,10 @@
                         videoElement,
                         result => {
                             console.log('Scanned:', result.data);
+                            // Detiene el escáner inmediatamente
+                            if (qrScanner) {
+                                qrScanner.stop();
+                            }
                             handleScan(result.data);
                         },
                         {
@@ -164,4 +167,3 @@
     </script>
 </body>
 </html>
-
