@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Asistencia QR</title>
+    <!-- Tailwind CSS desde CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .aspect-video {
+            aspect-ratio: 16 / 9;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="bg-white shadow-2xl rounded-xl p-6 md:p-10 max-w-4xl w-full">
+        <h1 class="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-2">Registro de Asistencia</h1>
+        <p class="text-center text-gray-600 mb-8">Escanea el código QR para registrar la asistencia de los padres.</p>
+
+        <!-- Campo de entrada para el evento -->
+        <div class="mb-6 w-full">
+            <label for="event-name" class="block text-gray-700 font-semibold mb-2">Nombre del Evento</label>
+            <input
+                type="text"
+                id="event-name"
+                class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                placeholder="Ej: Reunión de fin de año"
+            />
+        </div>
+
+        <!-- Sección de Escáner QR -->
+        <div class="flex flex-col items-center space-y-6 mb-8">
+            <div class="relative w-full max-w-lg aspect-video bg-gray-200 rounded-xl overflow-hidden shadow-inner border-4 border-gray-300">
+                <video id="qr-video" class="w-full h-full object-cover" playsinline></video>
+                <div id="no-camera-message" class="absolute inset-0 flex items-center justify-center text-center text-gray-500 p-4">
+                    <p>Haz clic en "Iniciar escáner" para activar la cámara.</p>
+                </div>
+            </div>
+            <button id="toggle-camera-btn" class="w-full sm:w-auto px-8 py-4 rounded-full font-semibold text-lg transition-colors duration-300
+                       bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 shadow-lg">
+                Iniciar escáner
+            </button>
+        </div>
+
+        <!-- Mensaje de Estado -->
+        <div id="status-message" class="hidden p-4 rounded-lg text-white font-medium text-center mb-6 transition-all duration-300 transform"></div>
+    </div>
+
+    <!-- Script de la aplicación -->
+    <script type="module">
+        import QrScanner from 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner.min.js';
+        
+        // Pega aquí la URL que obtuviste al desplegar el script de Google Apps Script.
+        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwlQ6E5ChKU9PdlcmGCO67uhXFIr7iGSAMV7X0HbfT2KOUIjRl-YHLu9LN7T-iZiTmG/exec';
+
+        let qrScanner = null;
+        let isCameraActive = false;
+
+        const videoElement = document.getElementById('qr-video');
+        const toggleCameraBtn = document.getElementById('toggle-camera-btn');
+        const statusMessageDiv = document.getElementById('status-message');
+        const noCameraMessage = document.getElementById('no-camera-message');
+        const eventInput = document.getElementById('event-name');
+
+        // Function to show a temporary status message
+        function showStatusMessage(message, type) {
+            statusMessageDiv.textContent = message;
+            statusMessageDiv.className = `p-4 rounded-lg text-white font-medium text-center mb-6 transition-all duration-300 transform`;
+            if (type === 'success') {
+                statusMessageDiv.classList.add('bg-green-500');
+            } else if (type === 'error') {
+                statusMessageDiv.classList.add('bg-red-500');
+            }
+            statusMessageDiv.classList.remove('hidden');
+            setTimeout(() => {
+                statusMessageDiv.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Function to handle a QR scan and send data to Apps Script
+        async function handleScan(id) {
+            const eventName = eventInput.value.trim();
+            if (!eventName) {
+                showStatusMessage('Por favor, ingresa el nombre del evento.', 'error');
+                return;
+            }
+
+            try {
+                showStatusMessage('Registrando asistencia...', 'success');
+                const response = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Necesario para evitar errores CORS
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ id_padre: id, evento: eventName }),
+                });
+                
+                showStatusMessage(`Asistencia registrada con éxito para el ID: ${id} en el evento '${eventName}'`, 'success');
+                // Nota: no podemos leer la respuesta con el modo 'no-cors'
+                console.log('Datos enviados correctamente.');
+
+            } catch (e) {
+                console.error('Error al registrar la asistencia:', e);
+                showStatusMessage('Error al registrar la asistencia. Inténtalo de nuevo.', 'error');
+            }
+        }
+
+        // Event listener for the camera button
+        toggleCameraBtn.addEventListener('click', () => {
+            isCameraActive = !isCameraActive;
+            if (isCameraActive) {
+                toggleCameraBtn.textContent = 'Detener escáner';
+                noCameraMessage.classList.add('hidden');
+                if (!qrScanner) {
+                    qrScanner = new QrScanner(
+                        videoElement,
+                        result => {
+                            console.log('Scanned:', result.data);
+                            handleScan(result.data);
+                        },
+                        {
+                            onDecodeError: error => {
+                                console.warn('Decode error:', error);
+                            },
+                            highlightScanRegion: true,
+                            highlightCodeOutline: true,
+                        }
+                    );
+                }
+                qrScanner.start().catch(err => {
+                    console.error('Failed to start scanner:', err);
+                    showStatusMessage('Error al iniciar la cámara. Por favor, asegúrate de tener los permisos necesarios.', 'error');
+                    isCameraActive = false;
+                    toggleCameraBtn.textContent = 'Iniciar escáner';
+                    noCameraMessage.classList.remove('hidden');
+                });
+            } else {
+                toggleCameraBtn.textContent = 'Iniciar escáner';
+                noCameraMessage.classList.remove('hidden');
+                if (qrScanner) {
+                    qrScanner.stop();
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>
