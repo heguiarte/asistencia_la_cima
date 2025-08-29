@@ -91,6 +91,11 @@
 
         // Function to handle a QR scan and send data to Apps Script
         async function handleScan(id) {
+            // Detiene el escáner inmediatamente para evitar múltiples lecturas
+            if (qrScanner) {
+                qrScanner.stop();
+            }
+
             if (isProcessingScan) return;
             isProcessingScan = true;
 
@@ -111,11 +116,6 @@
                     },
                     body: JSON.stringify({ id_padre: id, evento: eventName }),
                 });
-
-                // Detiene el escáner inmediatamente
-                if (qrScanner) {
-                    qrScanner.stop();
-                }
 
                 showStatusMessage(`Asistencia registrada con éxito para el ID: ${id} en el evento '${eventName}'`, 'success');
                 console.log('Datos enviados correctamente.');
