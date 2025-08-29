@@ -110,19 +110,25 @@
                 showStatusMessage('Registrando asistencia...', 'success');
                 const response = await fetch(WEB_APP_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Necesario para evitar errores CORS
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ id_padre: id, evento: eventName }),
                 });
 
-                showStatusMessage(`Asistencia registrada con éxito para el ID: ${id} en el evento '${eventName}'`, 'success');
-                console.log('Datos enviados correctamente.');
+                const result = await response.json();
+                
+                if (result.result === 'success') {
+                    showStatusMessage(`Asistencia registrada con éxito para el ID: ${id} en el evento '${eventName}'`, 'success');
+                    console.log('Datos enviados y confirmados correctamente.');
+                } else {
+                    showStatusMessage(`Error: ${result.message}`, 'error');
+                    console.error('Error del script:', result.message);
+                }
 
             } catch (e) {
                 console.error('Error al registrar la asistencia:', e);
-                showStatusMessage('Error al registrar la asistencia. Revisa el nombre de la hoja en tu Google Sheet (debe ser "Asistencia") y la URL del script.', 'error');
+                showStatusMessage('Error de conexión. Revisa que la URL del script sea correcta.', 'error');
             } finally {
                 isProcessingScan = false;
             }
