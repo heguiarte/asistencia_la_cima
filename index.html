@@ -25,12 +25,18 @@
         <!-- Campo de entrada para el evento -->
         <div class="mb-6 w-full">
             <label for="event-name" class="block text-gray-700 font-semibold mb-2">Nombre del Evento</label>
-            <input
-                type="text"
+            <select
                 id="event-name"
                 class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                placeholder="Ej: Reunión de fin de año"
-            />
+            >
+                <option value="">Selecciona un evento</option>
+                <option value="Somos padres">Somos padres</option>
+                <option value="Cafe con dirección">Cafe con dirección</option>
+                <option value="Charla de afectividad">Charla de afectividad</option>
+                <option value="Vinculo artistico">Vínculo artístico</option>
+                <option value="Mamas formando varones">Mamás formando varones</option>
+                <option value="La Cima Talk">La Cima Talk</option>
+            </select>
         </div>
 
         <!-- Sección de Escáner QR -->
@@ -56,7 +62,7 @@
         import QrScanner from 'https://unpkg.com/qr-scanner@1.4.2/qr-scanner.min.js';
         
         // Pega aquí la URL que obtuviste al desplegar el script de Google Apps Script.
-        const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwlQ6E5ChKU9PdlcmGCO67uhXFIr7iGSAMV7X0HbfT2KOUIjRl-YHLu9LN7T-iZiTmG/exec';
+        const WEB_APP_URL = 'pega_aqui_tu_url_de_google_apps_script';
 
         let qrScanner = null;
         let isCameraActive = false;
@@ -86,7 +92,7 @@
         async function handleScan(id) {
             const eventName = eventInput.value.trim();
             if (!eventName) {
-                showStatusMessage('Por favor, ingresa el nombre del evento.', 'error');
+                showStatusMessage('Por favor, selecciona un evento.', 'error');
                 return;
             }
 
@@ -102,7 +108,14 @@
                 });
                 
                 showStatusMessage(`Asistencia registrada con éxito para el ID: ${id} en el evento '${eventName}'`, 'success');
-                // Nota: no podemos leer la respuesta con el modo 'no-cors'
+                // Detiene el escáner automáticamente después del registro
+                isCameraActive = false;
+                toggleCameraBtn.textContent = 'Iniciar escáner';
+                noCameraMessage.classList.remove('hidden');
+                if (qrScanner) {
+                    qrScanner.stop();
+                }
+                
                 console.log('Datos enviados correctamente.');
 
             } catch (e) {
@@ -148,7 +161,6 @@
                 }
             }
         });
-
     </script>
 </body>
 </html>
