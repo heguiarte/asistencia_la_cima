@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -111,7 +111,12 @@
                     },
                     body: JSON.stringify({ id_padre: id, evento: eventName }),
                 });
-                
+
+                // Detiene el escáner inmediatamente
+                if (qrScanner) {
+                    qrScanner.stop();
+                }
+
                 showStatusMessage(`Asistencia registrada con éxito para el ID: ${id} en el evento '${eventName}'`, 'success');
                 console.log('Datos enviados correctamente.');
 
@@ -134,10 +139,6 @@
                         videoElement,
                         result => {
                             console.log('Scanned:', result.data);
-                            // Detiene el escáner inmediatamente
-                            if (qrScanner) {
-                                qrScanner.stop();
-                            }
                             handleScan(result.data);
                         },
                         {
@@ -167,4 +168,3 @@
     </script>
 </body>
 </html>
-
