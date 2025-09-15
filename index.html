@@ -37,136 +37,136 @@ box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 <body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
 
 <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-lg text-center">
-    <h1 class="text-3xl font-bold text-gray-800 mb-2">Registro de Asistencia</h1>
-    <p class="text-gray-500 mb-6">Escanea el código QR del padre de familia.</p>
-    
-    <div class="mb-6">
-        <label for="evento" class="block text-sm font-medium text-gray-700 text-left mb-1">Selecciona el Evento:</label>
-        <select id="evento" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md shadow-sm">
-            <option value="">-- Elige un evento --</option>
-            <option value="Somos padres">Somos padres</option>
-            <option value="Cafe con dirección">Café con dirección</option>
-            <option value="Charla de afectividad">Charla de afectividad</option>
-            <option value="Vínculo artístico">Vínculo artístico</option>
-            <option value="Mamás formando varones">Mamás formando varones</option>
-            <option value="La Cima Talk">La Cima Talk</option>
-        </select>
-    </div>
+<h1 class="text-3xl font-bold text-gray-800 mb-2">Registro de Asistencia</h1>
+<p class="text-gray-500 mb-6">Escanea el código QR del padre de familia.</p>
 
-    <div class="bg-gray-200 rounded-md overflow-hidden shadow-inner mb-4">
-        <video id="qr-video" class="w-full h-auto"></video>
-    </div>
+<div class="mb-6">
+    <label for="evento" class="block text-sm font-medium text-gray-700 text-left mb-1">Selecciona el Evento:</label>
+    <select id="evento" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md shadow-sm">
+        <option value="">-- Elige un evento --</option>
+        <option value="Somos padres">Somos padres</option>
+        <option value="Cafe con dirección">Café con dirección</option>
+        <option value="Charla de afectividad">Charla de afectividad</option>
+        <option value="Vínculo artístico">Vínculo artístico</option>
+        <option value="Mamás formando varones">Mamás formando varones</option>
+        <option value="La Cima Talk">La Cima Talk</option>
+    </select>
+</div>
 
-    <div id="loading" class="hidden text-center text-indigo-600 font-medium mb-4">
-        Cargando...
-    </div>
+<div class="bg-gray-200 rounded-md overflow-hidden shadow-inner mb-4">
+    <video id="qr-video" class="w-full h-auto"></video>
+</div>
 
-    <div id="statusMessage" class="hidden message-box text-sm"></div>
+<div id="loading" class="hidden text-center text-indigo-600 font-medium mb-4">
+    Cargando...
+</div>
+
+<div id="statusMessage" class="hidden message-box text-sm"></div>
 
 </div>
 
 <script>
-    // La URL de tu script de Google Apps
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxpixeRn-rxZ8_ueeg26CX4Q6jAcKOg2lFVpNrb7eFtFzJ7mQsWg57iU_SfhSGoaceV/exec';
+// La URL de tu script de Google Apps
+const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxpixeRn-rxZ8_ueeg26CX4Q6jAcKOg2lFVpNrb7eFtFzJ7mQsWg57iU_SfhSGoaceV/exec';
 
-    const video = document.getElementById('qr-video');
-    const statusMessage = document.getElementById('statusMessage');
-    const eventoSelect = document.getElementById('evento');
-    const loadingIndicator = document.getElementById('loading');
-    
-    let qrScanner;
+const video = document.getElementById(&#39;qr-video&#39;);
+const statusMessage = document.getElementById(&#39;statusMessage&#39;);
+const eventoSelect = document.getElementById(&#39;evento&#39;);
+const loadingIndicator = document.getElementById(&#39;loading&#39;);
 
-    function showMessage(message, type) {
-        statusMessage.textContent = message;
-        statusMessage.className = 'message-box text-sm mt-4 p-3 rounded-lg';
-        if (type === 'success') {
-            statusMessage.classList.add('bg-green-100', 'text-green-800', 'border', 'border-green-400');
-        } else if (type === 'error') {
-            statusMessage.classList.add('bg-red-100', 'text-red-800', 'border', 'border-red-400');
-        } else {
-             statusMessage.classList.add('bg-blue-100', 'text-blue-800', 'border', 'border-blue-400');
-        }
-        statusMessage.classList.remove('hidden');
+let qrScanner;
+
+function showMessage(message, type) {
+    statusMessage.textContent = message;
+    statusMessage.className = &#39;message-box text-sm mt-4 p-3 rounded-lg&#39;;
+    if (type === &#39;success&#39;) {
+        statusMessage.classList.add(&#39;bg-green-100&#39;, &#39;text-green-800&#39;, &#39;border&#39;, &#39;border-green-400&#39;);
+    } else if (type === &#39;error&#39;) {
+        statusMessage.classList.add(&#39;bg-red-100&#39;, &#39;text-red-800&#39;, &#39;border&#39;, &#39;border-red-400&#39;);
+    } else {
+         statusMessage.classList.add(&#39;bg-blue-100&#39;, &#39;text-blue-800&#39;, &#39;border&#39;, &#39;border-blue-400&#39;);
     }
+    statusMessage.classList.remove(&#39;hidden&#39;);
+}
 
-    function startScanner() {
-        if (qrScanner) {
-            qrScanner.destroy();
-        }
-        qrScanner = new QrScanner(
-            video,
-            result => handleScan(result),
-            { 
-                onDecodeError: error => {
-                    console.error('Error de decodificación:', error);
-                },
-                highlightScanRegion: true,
-                highlightCodeOutline: true,
-            }
-        );
-
-        qrScanner.start().then(() => {
-            showMessage('Escáner iniciado. Por favor, apunta al código QR.', 'info');
-        }).catch(error => {
-            showMessage('No se pudo iniciar la cámara. Asegúrate de que los permisos estén habilitados.', 'error');
-            console.error('Error al iniciar el escáner:', error);
-        });
+function startScanner() {
+    if (qrScanner) {
+        qrScanner.destroy();
     }
-
-    async function handleScan(result) {
-        if (qrScanner) {
-            qrScanner.stop();
+    qrScanner = new QrScanner(
+        video,
+        result =&gt; handleScan(result),
+        { 
+            onDecodeError: error =&gt; {
+                console.error(&#39;Error de decodificación:&#39;, error);
+            },
+            highlightScanRegion: true,
+            highlightCodeOutline: true,
         }
+    );
 
-        const idPadre = result.data;
-        const evento = eventoSelect.value;
-        
-        if (!evento) {
-            showMessage('Por favor, selecciona un evento antes de escanear.', 'error');
-            return;
-        }
-
-        showMessage('ID capturado. Registrando asistencia...', 'info');
-        loadingIndicator.classList.remove('hidden');
-
-        try {
-            const response = await fetch(WEB_APP_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: JSON.stringify({
-                    id: idPadre,
-                    evento: evento
-                }),
-            });
-            
-            const responseData = await response.json();
-
-            if (responseData.result === 'success') {
-                showMessage(`¡Registro exitoso! ID: ${idPadre}`, 'success');
-            } else {
-                showMessage(`Error en el servidor: ${responseData.error}`, 'error');
-            }
-        } catch (e) {
-            console.error('Error al enviar datos:', e);
-            showMessage('Error de conexión. Revisa que la URL del script sea correcta o tu conexión a internet.', 'error');
-        } finally {
-            loadingIndicator.classList.add('hidden');
-            setTimeout(() => {
-                startScanner();
-            }, 3000); // Reanuda el escáner después de 3 segundos
-        }
-    }
-    
-    document.addEventListener('DOMContentLoaded', startScanner);
-
-    eventoSelect.addEventListener('change', () => {
-         if (qrScanner) {
-            qrScanner.stop();
-         }
-         startScanner();
+    qrScanner.start().then(() =&gt; {
+        showMessage(&#39;Escáner iniciado. Por favor, apunta al código QR.&#39;, &#39;info&#39;);
+    }).catch(error =&gt; {
+        showMessage(&#39;No se pudo iniciar la cámara. Asegúrate de que los permisos estén habilitados.&#39;, &#39;error&#39;);
+        console.error(&#39;Error al iniciar el escáner:&#39;, error);
     });
+}
+
+async function handleScan(result) {
+    if (qrScanner) {
+        qrScanner.stop();
+    }
+
+    const idPadre = result.data;
+    const evento = eventoSelect.value;
+    
+    if (!evento) {
+        showMessage(&#39;Por favor, selecciona un evento antes de escanear.&#39;, &#39;error&#39;);
+        return;
+    }
+
+    showMessage(&#39;ID capturado. Registrando asistencia...&#39;, &#39;info&#39;);
+    loadingIndicator.classList.remove(&#39;hidden&#39;);
+
+    try {
+        const response = await fetch(WEB_APP_URL, {
+            method: &#39;POST&#39;,
+            headers: {
+                &#39;Content-Type&#39;: &#39;application/x-www-form-urlencoded&#39;,
+            },
+            body: JSON.stringify({
+                id: idPadre,
+                evento: evento
+            }),
+        });
+        
+        const responseData = await response.json();
+
+        if (responseData.result === &#39;success&#39;) {
+            showMessage(`¡Registro exitoso! ID: ${idPadre}`, &#39;success&#39;);
+        } else {
+            showMessage(`Error en el servidor: ${responseData.error}`, &#39;error&#39;);
+        }
+    } catch (e) {
+        console.error(&#39;Error al enviar datos:&#39;, e);
+        showMessage(&#39;Error de conexión. Revisa que la URL del script sea correcta o tu conexión a internet.&#39;, &#39;error&#39;);
+    } finally {
+        loadingIndicator.classList.add(&#39;hidden&#39;);
+        setTimeout(() =&gt; {
+            startScanner();
+        }, 3000); // Reanuda el escáner después de 3 segundos
+    }
+}
+
+document.addEventListener(&#39;DOMContentLoaded&#39;, startScanner);
+
+eventoSelect.addEventListener(&#39;change&#39;, () =&gt; {
+     if (qrScanner) {
+        qrScanner.stop();
+     }
+     startScanner();
+});
 
 </script>
 
